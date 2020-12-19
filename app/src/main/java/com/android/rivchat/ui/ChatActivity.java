@@ -18,6 +18,8 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
+import com.android.rivchat.Converter;
+import com.android.rivchat.RC6;
 import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -49,6 +51,8 @@ public class ChatActivity extends AppCompatActivity implements View.OnClickListe
     private LinearLayoutManager linearLayoutManager;
     public static HashMap<String, Bitmap> bitmapAvataFriend;
     public Bitmap bitmapAvataUser;
+    public String ChiperText;
+    public String PlainText;
     public String abv = "OKE";
 
 
@@ -88,7 +92,17 @@ public class ChatActivity extends AppCompatActivity implements View.OnClickListe
                         Message newMessage = new Message();
                         newMessage.idSender = (String) mapMessage.get("idSender");
                         newMessage.idReceiver = (String) mapMessage.get("idReceiver");
-                        newMessage.text = (String) mapMessage.get("text");
+
+                        //Dekripsi di dalam Room chat
+                        String pesan = (String) mapMessage.get("text");
+                        try{
+                            byte[] dekripsiRC6 = RC6.decrypt(Converter.static_stringToByteArray(pesan));
+                            PlainText = Converter.static_byteArrayToString(dekripsiRC6);
+                            newMessage.text = (PlainText);
+                        }catch (Exception e){
+                            e.printStackTrace();;
+                        }
+
                         newMessage.timestamp = (long) mapMessage.get("timestamp");
                         consersation.getListMessageData().add(newMessage);
                         adapter.notifyDataSetChanged();
@@ -147,12 +161,12 @@ public class ChatActivity extends AppCompatActivity implements View.OnClickListe
                 editWriteMessage.setText("");
                 Message newMessage = new Message();
                 try {
-                    //enkripsi
+                    //Enkripsi
 
+                    byte[] enkripsiRC6 = RC6.encrypt(Converter.static_stringToByteArray(content));
+                    ChiperText = Converter.static_byteArrayToString(enkripsiRC6);
 
-
-
-                    newMessage.text = content;
+                    newMessage.text = ChiperText;
                     newMessage.idSender = StaticConfig.UID;
                     newMessage.idReceiver = roomId;
                     newMessage.timestamp = System.currentTimeMillis();
@@ -172,6 +186,7 @@ class ListMessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private HashMap<String, Bitmap> bitmapAvata;
     private HashMap<String, DatabaseReference> bitmapAvataDB;
     private Bitmap bitmapAvataUser;
+    public String PlainTextHolder;
 
     public ListMessageAdapter(Context context, Consersation consersation, HashMap<String, Bitmap> bitmapAvata, Bitmap bitmapAvataUser) {
         this.context = context;
@@ -197,7 +212,16 @@ class ListMessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
         if (holder instanceof ItemMessageFriendHolder) {
             ((ItemMessageFriendHolder) holder).txtContent.setText(consersation.getListMessageData().get(position).text);
+
             //Dekrip Pesan
+
+            ((ItemMessageFriendHolder) holder).txtContent.setVisibility(View.VISIBLE);
+
+            //String pesan = consersation.getListMessageData().get(position).text;
+            //byte[] DekripsiRC6 = RC6.decrypt(Converter.static_stringToByteArray(pesan));
+            //PlainTextHolder = Converter.static_byteArrayToString(DekripsiRC6);
+            //((ItemMessageFriendHolder) holder).txtContent.setText(PlainTextHolder);
+
 
             //start
             //((ItemMessageFriendHolder) holder).ivContent.setVisibility(View.GONE);
@@ -218,7 +242,9 @@ class ListMessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             } catch (Exception e) {
                 e.printStackTrace();
             }*/
+
             //end
+
 
             Bitmap currentAvata = bitmapAvata.get(consersation.getListMessageData().get(position).idSender);
             if (currentAvata != null) {
@@ -234,10 +260,12 @@ class ListMessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                                 String avataStr = (String) dataSnapshot.getValue();
                                 Log.d("pesan ", "Isi Pesan :"+avataStr);
                                 if(!avataStr.equals(StaticConfig.STR_DEFAULT_BASE64)) {
+                                    //Salah Sini *
                                     byte[] decodedString = Base64.decode(avataStr, Base64.DEFAULT);
                                     //Log.d("pesan base64", "Isi Pesan Base64"+decodedString.);
                                     ChatActivity.bitmapAvataFriend.put(id, BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length));
                                     Log.d("pesan","Base64Isi Pesan:"+decodedString);
+                                    //
                                 }else{
                                     ChatActivity.bitmapAvataFriend.put(id, BitmapFactory.decodeResource(context.getResources(), R.drawable.default_avata));
                                     Log.d("pesan","Isi Pesan:"+context);
