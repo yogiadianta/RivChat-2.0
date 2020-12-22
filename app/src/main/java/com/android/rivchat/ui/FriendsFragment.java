@@ -24,6 +24,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import com.android.rivchat.Converter;
+import com.android.rivchat.RC6;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.Task;
@@ -522,11 +524,30 @@ class ListFriendsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             ((ItemFriendViewHolder) holder).txtMessage.setVisibility(View.VISIBLE);
             ((ItemFriendViewHolder) holder).txtTime.setVisibility(View.VISIBLE);
             if (!listFriend.getListFriend().get(position).message.text.startsWith(id)) {
-                ((ItemFriendViewHolder) holder).txtMessage.setText(listFriend.getListFriend().get(position).message.text);
+                //dekripsi di List Chat Friend
+                String pesan = (String) listFriend.getListFriend().get(position).message.text;
+                try{
+                    byte[] dekripsiRC6 = RC6.decrypt(Converter.static_stringToByteArray(pesan));
+                    String PlainText = Converter.static_byteArrayToString(dekripsiRC6);
+                    ((ItemFriendViewHolder) holder).txtMessage.setText(PlainText);
+                }catch (Exception e){
+                    e.printStackTrace();;
+                }
+                //((ItemFriendViewHolder) holder).txtMessage.setText(listFriend.getListFriend().get(position).message.text);
                 ((ItemFriendViewHolder) holder).txtMessage.setTypeface(Typeface.DEFAULT);
                 ((ItemFriendViewHolder) holder).txtName.setTypeface(Typeface.DEFAULT);
             } else {
-                ((ItemFriendViewHolder) holder).txtMessage.setText(listFriend.getListFriend().get(position).message.text.substring((id + "").length()));
+                //dekripsi di List chat friend
+                String pesan = (String) listFriend.getListFriend().get(position).message.text.substring((id + "").length());
+                try{
+                    byte[] dekripsiRC6 = RC6.decrypt(Converter.static_stringToByteArray(pesan));
+                    String PlainText = Converter.static_byteArrayToString(dekripsiRC6);
+                    ((ItemFriendViewHolder) holder).txtMessage.setText(PlainText);
+                }catch (Exception e){
+                    e.printStackTrace();
+                    Log.d("Erornya",e.getMessage());
+                }
+                //((ItemFriendViewHolder) holder).txtMessage.setText(listFriend.getListFriend().get(position).message.text.substring((id + "").length()));
                 ((ItemFriendViewHolder) holder).txtMessage.setTypeface(Typeface.DEFAULT_BOLD);
                 ((ItemFriendViewHolder) holder).txtName.setTypeface(Typeface.DEFAULT_BOLD);
             }
